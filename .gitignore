@@ -3,23 +3,15 @@
 # dependencies
 node_modules/
 
-# Expo
+# Next.js
+.next/
+out/
+
+# Legacy Expo local state (safe to remove after migration review)
 .expo/
-dist/
-web-build/
-expo-env.d.ts
 
-# Native
-.kotlin/
-*.orig.*
-*.jks
-*.p8
-*.p12
-*.key
-*.mobileprovision
-
-# Metro
-.metro-health-check*
+# deployment
+.vercel/
 
 # debug
 npm-debug.*

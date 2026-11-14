@@ -51,8 +51,8 @@ export default function DashboardPage() {
           const account = data.accounts.find((a) => a.id === item.accountId);
           return <div className="transaction-row" key={item.id}>
             <span className="category-icon" style={{ background: `${category?.color ?? "#66717d"}20` }}>{item.type === "transfer" ? "⇄" : category?.icon ?? "•"}</span>
-            <div className="transaction-main"><strong>{item.type === "transfer" ? "Chuyển tiền" : category?.name ?? "Không phân loại"}</strong><span>{account?.name}{item.note ? ` · ${item.note}` : ""}</span></div>
-            <strong className={item.type === "income" ? "income-text" : item.type === "expense" ? "expense-text" : ""}>{item.type === "income" ? "+" : item.type === "expense" ? "−" : ""}{formatMoney(item.amount)}</strong>
+            <div className="transaction-main"><strong>{item.type === "transfer" ? "Chuyển tiền" : category?.name ?? "Không phân loại"} {item.status === "pending" && <em className="pending-badge">Chờ</em>}</strong><span>{account?.name}{item.note ? ` · ${item.note}` : ""}</span></div>
+            <strong className={item.status === "pending" ? "pending-money" : item.type === "income" ? "income-text" : item.type === "expense" ? "expense-text" : ""}>{item.type === "income" ? "+" : item.type === "expense" ? "−" : ""}{formatMoney(item.amount)}</strong>
           </div>;
         })}</div>}
     </section>

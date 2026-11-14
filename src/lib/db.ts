@@ -2,8 +2,10 @@ import Dexie, { type EntityTable } from "dexie";
 
 export type AccountType = "cash" | "bank" | "ewallet";
 export type TransactionType = "income" | "expense" | "transfer";
+export type TransactionStatus = "pending" | "posted";
 export type CategoryType = "income" | "expense";
 export type DebtDirection = "lend" | "borrow";
+export type GoalKind = "savings" | "milestone";
 
 export interface AppMetaRecord { key: string; value: string }
 export interface AccountRecord {
@@ -13,7 +15,8 @@ export interface AccountRecord {
 export interface CategoryRecord { id: string; name: string; type: CategoryType; icon: string; color: string }
 export interface TransactionRecord {
   id: string; type: TransactionType; amount: number; accountId: string; toAccountId?: string;
-  categoryId?: string; note: string; occurredAt: string; createdAt: string; updatedAt: string;
+  categoryId?: string; note: string; occurredAt: string; status: TransactionStatus;
+  recurringRuleId?: string; createdAt: string; updatedAt: string;
 }
 export interface DebtRecord {
   id: string; direction: DebtDirection; person: string; originalAmount: number; note: string;
@@ -21,10 +24,14 @@ export interface DebtRecord {
 }
 export interface DebtPaymentRecord { id: string; debtId: string; amount: number; paidAt: string; note: string }
 export interface GoalRecord {
-  id: string; name: string; targetAmount: number; deadline?: string; icon: string; color: string;
+  id: string; name: string; kind: GoalKind; targetAmount: number; deadline?: string; icon: string; color: string;
   createdAt: string; updatedAt: string;
 }
 export interface GoalContributionRecord { id: string; goalId: string; amount: number; contributedAt: string; note: string }
+export interface RecurringRuleRecord {
+  id: string; name: string; amount: number; accountId: string; categoryId: string;
+  dayOfMonth: number; note: string; isActive: 0 | 1; createdAt: string; updatedAt: string;
+}
 
 class FlowMoneyDatabase extends Dexie {
   appMeta!: EntityTable<AppMetaRecord, "key">;
@@ -35,6 +42,7 @@ class FlowMoneyDatabase extends Dexie {
   debtPayments!: EntityTable<DebtPaymentRecord, "id">;
   goals!: EntityTable<GoalRecord, "id">;
   goalContributions!: EntityTable<GoalContributionRecord, "id">;
+  recurringRules!: EntityTable<RecurringRuleRecord, "id">;
 
   constructor() {
     super("flowmoney");
@@ -48,6 +56,20 @@ class FlowMoneyDatabase extends Dexie {
       debtPayments: "&id, debtId, paidAt",
       goals: "&id, deadline, createdAt",
       goalContributions: "&id, goalId, contributedAt",
+    });
+    this.version(3).stores({
+      appMeta: "&key",
+      accounts: "&id, type, isHidden, createdAt",
+      categories: "&id, type, name",
+      transactions: "&id, type, status, accountId, toAccountId, categoryId, recurringRuleId, occurredAt, createdAt",
+      debts: "&id, direction, dueDate, createdAt",
+      debtPayments: "&id, debtId, paidAt",
+      goals: "&id, kind, deadline, createdAt",
+      goalContributions: "&id, goalId, contributedAt",
+      recurringRules: "&id, isActive, accountId, categoryId, dayOfMonth, createdAt",
+    }).upgrade(async (transaction) => {
+      await transaction.table("transactions").toCollection().modify({ status: "posted" });
+      await transaction.table("goals").toCollection().modify({ kind: "savings" });
     });
   }
 }

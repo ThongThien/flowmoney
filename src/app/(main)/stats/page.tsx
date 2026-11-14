@@ -14,7 +14,7 @@ export default function StatsPage() {
   const analysis = useMemo(() => {
     if (!data) return null;
     const totals = calculateMonthTotals(data.transactions, month);
-    const expenses = data.transactions.filter((item) => item.type === "expense" && monthKey(item.occurredAt) === month);
+    const expenses = data.transactions.filter((item) => item.status !== "pending" && item.type === "expense" && monthKey(item.occurredAt) === month);
     const categoryTotals = data.categories.filter((item) => item.type === "expense").map((category) => ({ ...category,
       total: expenses.filter((item) => item.categoryId === category.id).reduce((sum, item) => sum + item.amount, 0) }))
       .filter((item) => item.total > 0).sort((a, b) => b.total - a.total);

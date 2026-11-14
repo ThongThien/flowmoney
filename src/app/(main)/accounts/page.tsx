@@ -9,6 +9,7 @@ import { formatMoney } from "@/lib/format";
 import { MoneyInput } from "@/components/MoneyInput";
 import { PageHeader } from "@/components/PageHeader";
 import { Icon } from "@/components/Icon";
+import { SwipeActions } from "@/components/SwipeActions";
 
 const typeLabels: Record<AccountType, string> = { cash: "Tiền mặt", bank: "Ngân hàng", ewallet: "Ví điện tử" };
 const colors = ["#25d8a3", "#46a6ff", "#b58cff", "#ff9d66", "#ff6f91"];
@@ -30,11 +31,14 @@ export default function AccountsPage() {
 
     <section className="content-section">
       <div className="section-title"><h2>Đang sử dụng</h2><span>{active.length} tài khoản</span></div>
-      <div className="account-list">{active.map((account) => <article className="account-card" key={account.id} style={{ "--account-color": account.color } as React.CSSProperties}>
+      <div className="account-list">{active.map((account) => <SwipeActions key={account.id} actions={[
+        { label: "Chỉnh sửa tài khoản", icon: "✎", onClick: () => setEditing(account) },
+        { label: "Ẩn tài khoản", icon: "◌", tone: "danger", onClick: () => { void db.accounts.update(account.id, { isHidden: 1, updatedAt: new Date().toISOString() }); } },
+      ]}><article className="account-card" style={{ "--account-color": account.color } as React.CSSProperties}>
         <div className="account-card-top"><span className="account-symbol"><Icon name="wallet" /></span><span className="account-type">{typeLabels[account.type]}</span></div>
         <div><h3>{account.name}</h3><strong>{formatMoney(calculateAccountBalance(account, data.transactions))}</strong></div>
-        <div className="card-actions"><button onClick={() => setEditing(account)}>Chỉnh sửa</button><button onClick={() => db.accounts.update(account.id, { isHidden: 1, updatedAt: new Date().toISOString() })}>Ẩn</button></div>
-      </article>)}</div>
+        <small className="swipe-hint">Vuốt sang trái để thao tác</small>
+      </article></SwipeActions>)}</div>
     </section>
 
     <Link className="wide-link" href="/debts"><span className="quick-icon purple"><Icon name="debt" /></span><div><strong>Quản lý công nợ</strong><p>Theo dõi khoản cho vay, đi vay và trả nợ.</p></div><Icon name="arrow" /></Link>

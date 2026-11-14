@@ -2,7 +2,7 @@ import type { AccountRecord, DebtPaymentRecord, DebtRecord, GoalContributionReco
 import { monthKey } from "./format";
 
 export function calculateAccountBalance(account: AccountRecord, transactions: TransactionRecord[]): number {
-  return transactions.reduce((balance, item) => {
+  return transactions.filter((item) => item.status !== "pending").reduce((balance, item) => {
     if (item.type === "income" && item.accountId === account.id) return balance + item.amount;
     if (item.type === "expense" && item.accountId === account.id) return balance - item.amount;
     if (item.type === "transfer" && item.accountId === account.id) return balance - item.amount;
@@ -17,7 +17,7 @@ export function calculateNetWorth(accounts: AccountRecord[], transactions: Trans
 }
 
 export function calculateMonthTotals(transactions: TransactionRecord[], targetMonth: string) {
-  return transactions.reduce((totals, item) => {
+  return transactions.filter((item) => item.status !== "pending").reduce((totals, item) => {
     if (monthKey(item.occurredAt) !== targetMonth) return totals;
     if (item.type === "income") totals.income += item.amount;
     if (item.type === "expense") totals.expense += item.amount;

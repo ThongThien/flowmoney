@@ -1,9 +1,9 @@
 "use client";
 
 import { useEffect } from "react";
-import { initializeDatabase } from "@/lib/db";
+import { ensureRecurringTransactions } from "@/lib/recurring";
 
 export function AppInitializer() {
-  useEffect(() => { initializeDatabase().catch((error) => console.error("Không thể khởi tạo dữ liệu", error)); }, []);
+  useEffect(() => { ensureRecurringTransactions().catch((error) => console.error("Không thể khởi tạo dữ liệu", error)); }, []);
   return null;
 }

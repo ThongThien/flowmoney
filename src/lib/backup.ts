@@ -36,8 +36,17 @@ export async function replaceDatabaseFromBackup(backup: FlowMoneyBackup): Promis
       let rows = backup.tables[table.name] ?? [];
       if (backup.databaseVersion < 3 && table.name === "transactions") rows = rows.map((row) => ({ ...(row as object), status: "posted" }));
       if (backup.databaseVersion < 3 && table.name === "goals") rows = rows.map((row) => ({ ...(row as object), kind: "savings" }));
+      if (backup.databaseVersion < 4 && table.name === "goals") rows = rows.map((row) => ({ ...(row as object), isArchived: 0 }));
       if (rows.length) await (table as Table<unknown>).bulkAdd(rows);
     }
+  });
+  await initializeDatabase();
+}
+
+export async function resetDatabase(): Promise<void> {
+  await db.open();
+  await db.transaction("rw", db.tables, async () => {
+    for (const table of db.tables) await table.clear();
   });
   await initializeDatabase();
 }

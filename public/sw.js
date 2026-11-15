@@ -1,4 +1,4 @@
-const CACHE_VERSION = "flowmoney-shell-v4";
+const CACHE_VERSION = "personal-finance-shell-v5";
 const APP_SHELL = [
   "/",
   "/offline/",

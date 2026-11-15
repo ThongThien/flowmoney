@@ -1,37 +1,31 @@
 "use client";
 
 import { useRef, useState, type ChangeEvent } from "react";
-import { createBackup, parseBackup, replaceDatabaseFromBackup, serializeBackup } from "@/lib/backup";
+import { createBackup, parseBackup, replaceDatabaseFromBackup, resetDatabase, serializeBackup, type FlowMoneyBackup } from "@/lib/backup";
 import { formatDate } from "@/lib/format";
 import { PageHeader } from "@/components/PageHeader";
 import { Icon } from "@/components/Icon";
+import { useAppStore } from "@/stores/useAppStore";
+
+function downloadBackup(backup: FlowMoneyBackup) {
+  const file = new File([serializeBackup(backup)], `personal-finance-${backup.exportedAt.slice(0, 10)}.json`, { type: "application/json" });
+  const url = URL.createObjectURL(file); const link = document.createElement("a"); link.href = url; link.download = file.name; link.click(); URL.revokeObjectURL(url);
+  return file;
+}
 
 export default function SettingsPage() {
   const inputRef = useRef<HTMLInputElement>(null); const [message, setMessage] = useState(""); const [busy, setBusy] = useState(false);
-  async function exportData() {
-    setBusy(true); setMessage("");
-    try {
-      const backup = await createBackup(); const content = serializeBackup(backup);
-      const filename = `flowmoney-backup-${backup.exportedAt.slice(0, 10)}.json`;
-      const file = new File([content], filename, { type: "application/json" });
-      if (navigator.share && navigator.canShare?.({ files: [file] })) await navigator.share({ title: "Sao lưu FlowMoney", files: [file] });
-      else { const url = URL.createObjectURL(file); const link = document.createElement("a"); link.href = url; link.download = filename; link.click(); URL.revokeObjectURL(url); }
-      setMessage("Đã tạo bản sao lưu. Hãy lưu file vào Files hoặc iCloud Drive.");
-    } catch (error) { if ((error as DOMException).name !== "AbortError") setMessage(`Không thể xuất dữ liệu: ${(error as Error).message}`); }
-    finally { setBusy(false); }
-  }
-  async function importData(event: ChangeEvent<HTMLInputElement>) {
-    const file = event.target.files?.[0]; if (!file) return; setBusy(true); setMessage("");
-    try { const backup = parseBackup(await file.text()); const tableCount = Object.keys(backup.tables).length;
-      if (!window.confirm(`Khôi phục bản sao ngày ${formatDate(backup.exportedAt)} gồm ${tableCount} bảng? Dữ liệu hiện tại sẽ được thay thế.`)) return;
-      await replaceDatabaseFromBackup(backup); setMessage("Khôi phục thành công. Ứng dụng sẽ tải lại."); window.setTimeout(() => window.location.reload(), 700);
-    } catch (error) { setMessage(`Không thể khôi phục: ${(error as Error).message}`); }
-    finally { setBusy(false); event.target.value = ""; }
-  }
-  return <div className="page-stack narrow-page"><PageHeader eyebrow="Dữ liệu của bạn" title="Cài đặt" description="FlowMoney không gửi dữ liệu lên máy chủ. Bạn hoàn toàn kiểm soát bản sao lưu." />
-    <section className="settings-card"><span className="settings-icon"><Icon name="backup" /></span><div><h2>Sao lưu dữ liệu</h2><p>Tạo file JSON chứa tài khoản, giao dịch, công nợ, mục tiêu và danh mục.</p></div><button className="primary-button" onClick={exportData} disabled={busy}>Xuất file backup</button></section>
-    <section className="settings-card"><span className="settings-icon purple"><Icon name="backup" /></span><div><h2>Khôi phục dữ liệu</h2><p>Chọn file FlowMoney từ thiết bị khác. Bạn sẽ được xác nhận trước khi thay thế.</p></div><input ref={inputRef} type="file" accept="application/json,.json" hidden onChange={importData} /><button className="secondary-button" onClick={() => inputRef.current?.click()} disabled={busy}>Chọn file để nhập</button></section>
+  const locale = useAppStore((state) => state.locale); const setLocale = useAppStore((state) => state.setLocale);
+  const theme = useAppStore((state) => state.theme); const setTheme = useAppStore((state) => state.setTheme); const en = locale === "en";
+  async function exportData() { setBusy(true); setMessage(""); try { const backup = await createBackup(); const file = downloadBackup(backup); if (navigator.share && navigator.canShare?.({ files: [file] })) await navigator.share({ title: "Personal Finance backup", files: [file] }); setMessage(en ? "Backup created." : "Đã tạo bản sao lưu."); } catch (error) { if ((error as DOMException).name !== "AbortError") setMessage((error as Error).message); } finally { setBusy(false); } }
+  async function importData(event: ChangeEvent<HTMLInputElement>) { const file = event.target.files?.[0]; if (!file) return; setBusy(true); setMessage(""); try { const backup = parseBackup(await file.text()); if (!window.confirm(en ? `Replace current data with the backup from ${formatDate(backup.exportedAt)}?` : `Thay dữ liệu hiện tại bằng bản sao ngày ${formatDate(backup.exportedAt)}?`)) return; await replaceDatabaseFromBackup(backup); window.location.reload(); } catch (error) { setMessage((error as Error).message); } finally { setBusy(false); event.target.value = ""; } }
+  async function reset() { if (!window.confirm(en ? "Reset all data to zero? A recovery backup will be downloaded first." : "Đưa toàn bộ dữ liệu về 0? Một bản sao phục hồi sẽ được tải xuống trước.")) return; setBusy(true); try { downloadBackup(await createBackup()); await resetDatabase(); window.location.reload(); } catch (error) { setMessage((error as Error).message); setBusy(false); } }
+  return <div className="page-stack narrow-page"><PageHeader eyebrow={en ? "Your app" : "Ứng dụng"} title={en ? "Settings" : "Cài đặt"} />
+    <section className="settings-card preference-card"><span className="settings-icon">Aa</span><div><h2>{en ? "Language" : "Ngôn ngữ"}</h2><p>{en ? "English is the default language." : "Tiếng Anh là ngôn ngữ mặc định."}</p></div><div className="segmented"><button className={locale === "en" ? "active" : ""} onClick={() => setLocale("en")}>English</button><button className={locale === "vi" ? "active" : ""} onClick={() => setLocale("vi")}>Tiếng Việt</button></div></section>
+    <section className="settings-card preference-card"><span className="settings-icon purple">◐</span><div><h2>{en ? "Appearance" : "Giao diện"}</h2><p>{en ? "Dark mode is used by default." : "Chế độ tối được dùng mặc định."}</p></div><div className="segmented"><button className={theme === "dark" ? "active" : ""} onClick={() => setTheme("dark")}>Dark</button><button className={theme === "light" ? "active" : ""} onClick={() => setTheme("light")}>Light</button></div></section>
+    <section className="settings-card"><span className="settings-icon"><Icon name="backup" /></span><div><h2>{en ? "Backup" : "Sao lưu"}</h2><p>{en ? "Export a portable JSON file." : "Xuất file JSON để chuyển thiết bị."}</p></div><button className="icon-action" aria-label="Export backup" title="Export" onClick={exportData} disabled={busy}><Icon name="backup" /></button></section>
+    <section className="settings-card"><span className="settings-icon purple"><Icon name="backup" /></span><div><h2>{en ? "Restore" : "Khôi phục"}</h2><p>{en ? "Import a Personal Finance backup." : "Nhập bản sao từ thiết bị khác."}</p></div><input ref={inputRef} type="file" accept="application/json,.json" hidden onChange={importData} /><button className="icon-action" aria-label="Import backup" title="Import" onClick={() => inputRef.current?.click()} disabled={busy}>↓</button></section>
+    <section className="settings-card danger-card"><span className="settings-icon"><Icon name="trash" /></span><div><h2>{en ? "Reset data" : "Đặt lại dữ liệu"}</h2><p>{en ? "Download a recovery file, then reset everything to zero." : "Tải bản phục hồi rồi đưa mọi dữ liệu về 0."}</p></div><button className="icon-action danger" aria-label="Reset data" title="Reset" onClick={reset} disabled={busy}><Icon name="trash" /></button></section>
     {message && <p className="message" role="status">{message}</p>}
-    <section className="privacy-note"><strong>Riêng tư mặc định</strong><p>Không tài khoản đăng nhập, không backend, không theo dõi. Xóa dữ liệu Safari hoặc gỡ PWA có thể làm mất dữ liệu nếu chưa sao lưu.</p></section>
   </div>;
 }

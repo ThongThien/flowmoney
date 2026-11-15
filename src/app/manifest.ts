@@ -4,16 +4,16 @@ export const dynamic = "force-static";
 
 export default function manifest(): MetadataRoute.Manifest {
   return {
-    name: "FlowMoney",
-    short_name: "FlowMoney",
-    description: "Quản lý tài chính cá nhân offline trên thiết bị của bạn.",
+    name: "Personal Finance",
+    short_name: "Finance",
+    description: "Offline personal finance manager stored on your device.",
     start_url: "/",
     scope: "/",
     display: "standalone",
     orientation: "portrait-primary",
     background_color: "#080a0c",
     theme_color: "#080a0c",
-    lang: "vi",
+    lang: "en",
     icons: [
       {
         src: "/icons/icon-192.png",

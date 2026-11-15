@@ -11,6 +11,11 @@ export function calculateAccountBalance(account: AccountRecord, transactions: Tr
   }, account.openingBalance);
 }
 
+export function accountBalanceById(accountId: string, accounts: AccountRecord[], transactions: TransactionRecord[]): number {
+  const account = accounts.find((item) => item.id === accountId);
+  return account ? calculateAccountBalance(account, transactions) : 0;
+}
+
 export function calculateNetWorth(accounts: AccountRecord[], transactions: TransactionRecord[]): number {
   return accounts.filter((account) => !account.isHidden)
     .reduce((total, account) => total + calculateAccountBalance(account, transactions), 0);

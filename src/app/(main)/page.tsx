@@ -7,8 +7,10 @@ import { calculateMonthTotals, calculateNetWorth, debtRemaining } from "@/lib/fi
 import { currentMonthKey, formatMoney } from "@/lib/format";
 import { EmptyState } from "@/components/EmptyState";
 import { Icon } from "@/components/Icon";
+import { useAppStore } from "@/stores/useAppStore";
 
 export default function DashboardPage() {
+  const en = useAppStore((state) => state.locale) === "en";
   const data = useLiveQuery(async () => ({
     accounts: await db.accounts.toArray(), transactions: await db.transactions.orderBy("occurredAt").reverse().toArray(),
     categories: await db.categories.toArray(), debts: await db.debts.toArray(), payments: await db.debtPayments.toArray(),
@@ -26,11 +28,11 @@ export default function DashboardPage() {
 
   return <div className="page-stack">
     <section className="balance-hero">
-      <span className="kicker">Tổng tài sản</span>
+      <span className="kicker">{en ? "Total balance" : "Tổng tài sản"}</span>
       <h1>{formatMoney(total)}</h1>
       <div className="hero-metrics">
-        <div><span className="trend income">↗</span><p>Thu tháng này</p><strong className="income-text">+{formatMoney(month.income)}</strong></div>
-        <div><span className="trend expense">↘</span><p>Chi tháng này</p><strong className="expense-text">−{formatMoney(month.expense)}</strong></div>
+        <div><span className="trend income">↗</span><p>{en ? "In this month" : "Thu tháng này"}</p><strong className="income-text">+{formatMoney(month.income)}</strong></div>
+        <div><span className="trend expense">↘</span><p>{en ? "Out this month" : "Chi tháng này"}</p><strong className="expense-text">−{formatMoney(month.expense)}</strong></div>
       </div>
       <div className="flow-chart" aria-label="So sánh thu chi tháng này">
         <div><span>Thu</span><i style={{ width: `${(month.income / maxFlow) * 100}%` }} /></div>
@@ -39,12 +41,12 @@ export default function DashboardPage() {
     </section>
 
     <section className="quick-grid">
-      <Link href="/accounts" className="quick-card"><span className="quick-icon green"><Icon name="wallet" /></span><div><p>Tài khoản</p><strong>{data.accounts.filter((a) => !a.isHidden).length}</strong></div><Icon name="arrow" className="arrow" /></Link>
-      <Link href="/debts" className="quick-card"><span className="quick-icon purple"><Icon name="debt" /></span><div><p>Công nợ ròng</p><strong>{formatMoney(debtReceivable - debtPayable)}</strong></div><Icon name="arrow" className="arrow" /></Link>
+      <Link href="/accounts" className="quick-card"><span className="quick-icon green"><Icon name="wallet" /></span><div><p>{en ? "Accounts" : "Tài khoản"}</p><strong>{data.accounts.filter((a) => !a.isHidden).length}</strong></div><Icon name="arrow" className="arrow" /></Link>
+      <Link href="/debts" className="quick-card"><span className="quick-icon purple"><Icon name="debt" /></span><div><p>{en ? "Net debt" : "Công nợ ròng"}</p><strong>{formatMoney(debtReceivable - debtPayable)}</strong></div><Icon name="arrow" className="arrow" /></Link>
     </section>
 
     <section className="content-section">
-      <div className="section-title"><div><span className="kicker">Hoạt động</span><h2>Giao dịch gần đây</h2></div><Link href="/transactions">Xem tất cả</Link></div>
+      <div className="section-title"><div><span className="kicker">{en ? "Activity" : "Hoạt động"}</span><h2>{en ? "Recent" : "Gần đây"}</h2></div><Link href="/transactions">{en ? "All" : "Tất cả"}</Link></div>
       {data.transactions.length === 0 ? <EmptyState title="Chưa có giao dịch">Nhấn nút + để ghi khoản thu, chi hoặc chuyển tiền đầu tiên.</EmptyState> :
         <div className="transaction-list">{data.transactions.slice(0, 5).map((item) => {
           const category = item.categoryId ? categoryMap.get(item.categoryId) : undefined;

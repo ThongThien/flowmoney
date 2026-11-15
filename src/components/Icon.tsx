@@ -1,6 +1,6 @@
 import type { SVGProps } from "react";
 
-export type IconName = "home" | "wallet" | "swap" | "target" | "chart" | "plus" | "settings" | "arrow" | "debt" | "backup";
+export type IconName = "home" | "wallet" | "swap" | "target" | "chart" | "plus" | "settings" | "arrow" | "debt" | "backup" | "box" | "trash" | "archive";
 
 const paths: Record<IconName, React.ReactNode> = {
   home: <><path d="m3 11 9-8 9 8"/><path d="M5 10v10h14V10"/><path d="M9 20v-6h6v6"/></>,
@@ -13,6 +13,9 @@ const paths: Record<IconName, React.ReactNode> = {
   arrow: <><path d="M5 12h14"/><path d="m13 6 6 6-6 6"/></>,
   debt: <><circle cx="9" cy="8" r="3"/><path d="M3 20c0-4 2-6 6-6s6 2 6 6"/><path d="M17 8h5"/><path d="m20 5 3 3-3 3"/></>,
   backup: <><path d="M12 3v12"/><path d="m7 8 5-5 5 5"/><path d="M4 14v6h16v-6"/></>,
+  box: <><path d="m4 7 8-4 8 4-8 4-8-4Z"/><path d="M4 7v10l8 4 8-4V7"/><path d="M12 11v10"/></>,
+  trash: <><path d="M4 7h16"/><path d="m9 7 1-3h4l1 3"/><path d="m6 7 1 14h10l1-14"/></>,
+  archive: <><path d="M4 8v12h16V8"/><path d="M2 4h20v4H2z"/><path d="M9 12h6"/></>,
 };
 
 export function Icon({ name, ...props }: { name: IconName } & SVGProps<SVGSVGElement>) {

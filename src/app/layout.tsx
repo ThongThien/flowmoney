@@ -5,15 +5,15 @@ import "./globals.css";
 
 export const metadata: Metadata = {
   title: {
-    default: "FlowMoney",
-    template: "%s · FlowMoney",
+    default: "Personal Finance",
+    template: "%s · Personal Finance",
   },
-  description: "Quản lý thu chi, tài khoản, công nợ và mục tiêu hoàn toàn offline.",
-  applicationName: "FlowMoney",
+  description: "Offline personal finance manager for accounts, activity, debts and goals.",
+  applicationName: "Personal Finance",
   appleWebApp: {
     capable: true,
     statusBarStyle: "default",
-    title: "FlowMoney",
+    title: "Personal Finance",
   },
   icons: {
     icon: "/icons/icon-192.png",
@@ -30,7 +30,7 @@ export const viewport: Viewport = {
 
 export default function RootLayout({ children }: Readonly<{ children: ReactNode }>) {
   return (
-    <html lang="vi">
+    <html lang="en" suppressHydrationWarning>
       <body>
         <ServiceWorkerRegistration />
         {children}

@@ -4,26 +4,28 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import type { ReactNode } from "react";
 import { Icon, type IconName } from "./Icon";
+import { useAppStore } from "@/stores/useAppStore";
 
-const nav: Array<{ href: string; label: string; icon: IconName }> = [
-  { href: "/", label: "Tổng quan", icon: "home" },
-  { href: "/accounts", label: "Tài khoản", icon: "wallet" },
-  { href: "/transactions", label: "Giao dịch", icon: "swap" },
-  { href: "/goals", label: "Mục tiêu", icon: "target" },
-  { href: "/stats", label: "Thống kê", icon: "chart" },
+const nav: Array<{ href: string; en: string; vi: string; icon: IconName }> = [
+  { href: "/", en: "Home", vi: "Tổng quan", icon: "home" },
+  { href: "/accounts", en: "Accounts", vi: "Tài khoản", icon: "wallet" },
+  { href: "/transactions", en: "Activity", vi: "Giao dịch", icon: "swap" },
+  { href: "/goals", en: "Goals", vi: "Mục tiêu", icon: "target" },
+  { href: "/assets", en: "Items", vi: "Tài sản", icon: "box" },
 ];
 
 export function AppShell({ children }: { children: ReactNode }) {
   const pathname = usePathname();
+  const locale = useAppStore((state) => state.locale);
   return (
     <div className="app-frame">
       <header className="topbar">
-        <Link className="brand" href="/" aria-label="FlowMoney - Tổng quan">
-          <span className="brand-mark">F</span><span>Flow<span>Money</span></span>
+        <Link className="brand" href="/" aria-label="Personal Finance">
+          <span className="brand-mark">P</span><span>{locale === "en" ? "Personal Finance" : "Quản lý tài chính"}</span>
         </Link>
         <div className="topbar-actions">
-          <span className="offline-pill">● <span>Offline-first</span></span>
-          <Link className="icon-button" href="/settings" aria-label="Cài đặt và sao lưu"><Icon name="settings" /></Link>
+          <span className="offline-pill">● <span>{locale === "en" ? "On device" : "Trên thiết bị"}</span></span>
+          <Link className="icon-button" href="/settings" aria-label={locale === "en" ? "Settings" : "Cài đặt"}><Icon name="settings" /></Link>
         </div>
       </header>
       <main className="app-content">{children}</main>
@@ -32,7 +34,7 @@ export function AppShell({ children }: { children: ReactNode }) {
         {nav.map((item) => {
           const active = item.href === "/" ? pathname === "/" : pathname.startsWith(item.href);
           return <Link key={item.href} href={item.href} className={active ? "active" : ""}>
-            <Icon name={item.icon} /><span>{item.label}</span>
+            <Icon name={item.icon} /><span>{locale === "en" ? item.en : item.vi}</span>
           </Link>;
         })}
       </nav>

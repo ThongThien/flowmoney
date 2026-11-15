@@ -7,8 +7,7 @@ import { Icon, type IconName } from "./Icon";
 import { useAppStore } from "@/stores/useAppStore";
 
 const nav: Array<{ href: string; en: string; vi: string; icon: IconName }> = [
-  { href: "/", en: "Home", vi: "Tổng quan", icon: "home" },
-  { href: "/accounts", en: "Accounts", vi: "Tài khoản", icon: "wallet" },
+  { href: "/", en: "Manage", vi: "Quản lý", icon: "home" },
   { href: "/transactions", en: "Activity", vi: "Giao dịch", icon: "swap" },
   { href: "/goals", en: "Goals", vi: "Mục tiêu", icon: "target" },
   { href: "/assets", en: "Items", vi: "Tài sản", icon: "box" },

@@ -1,4 +1,4 @@
-const CACHE_VERSION = "personal-finance-shell-v6";
+const CACHE_VERSION = "personal-finance-shell-v7";
 const APP_SHELL = [
   "/",
   "/offline/",

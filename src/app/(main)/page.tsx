@@ -3,64 +3,33 @@
 import Link from "next/link";
 import { useLiveQuery } from "dexie-react-hooks";
 import { db } from "@/lib/db";
-import { calculateMonthTotals, calculateNetWorth, debtRemaining } from "@/lib/finance";
-import { currentMonthKey, formatMoney } from "@/lib/format";
-import { EmptyState } from "@/components/EmptyState";
-import { Icon } from "@/components/Icon";
+import { PageHeader } from "@/components/PageHeader";
+import { Icon, type IconName } from "@/components/Icon";
 import { useAppStore } from "@/stores/useAppStore";
 
-export default function DashboardPage() {
+export default function ManagePage() {
   const en = useAppStore((state) => state.locale) === "en";
   const data = useLiveQuery(async () => ({
-    accounts: await db.accounts.toArray(), transactions: await db.transactions.orderBy("occurredAt").reverse().toArray(),
-    categories: await db.categories.toArray(), debts: await db.debts.toArray(), payments: await db.debtPayments.toArray(),
+    accounts: await db.accounts.where("isHidden").equals(0).count(), debts: await db.debts.count(),
+    recurring: await db.recurringRules.where("isActive").equals(1).count(), goals: await db.goals.where("isArchived").equals(0).count(),
+    items: await db.possessions.where("isArchived").equals(0).count(),
   }));
-  if (!data) return <DashboardSkeleton />;
-
-  const total = calculateNetWorth(data.accounts, data.transactions);
-  const month = calculateMonthTotals(data.transactions, currentMonthKey());
-  const categoryMap = new Map(data.categories.map((item) => [item.id, item]));
-  const debtReceivable = data.debts.filter((item) => item.direction === "lend")
-    .reduce((sum, item) => sum + debtRemaining(item, data.payments), 0);
-  const debtPayable = data.debts.filter((item) => item.direction === "borrow")
-    .reduce((sum, item) => sum + debtRemaining(item, data.payments), 0);
-  const maxFlow = Math.max(month.income, month.expense, 1);
-
-  return <div className="page-stack">
-    <section className="balance-hero">
-      <span className="kicker">{en ? "Total balance" : "Tổng tài sản"}</span>
-      <h1>{formatMoney(total)}</h1>
-      <div className="hero-metrics">
-        <div><span className="trend income">↗</span><p>{en ? "In this month" : "Thu tháng này"}</p><strong className="income-text">+{formatMoney(month.income)}</strong></div>
-        <div><span className="trend expense">↘</span><p>{en ? "Out this month" : "Chi tháng này"}</p><strong className="expense-text">−{formatMoney(month.expense)}</strong></div>
-      </div>
-      <div className="flow-chart" aria-label="So sánh thu chi tháng này">
-        <div><span>Thu</span><i style={{ width: `${(month.income / maxFlow) * 100}%` }} /></div>
-        <div><span>Chi</span><i className="expense-bar" style={{ width: `${(month.expense / maxFlow) * 100}%` }} /></div>
-      </div>
-    </section>
-
-    <section className="quick-grid">
-      <Link href="/accounts" className="quick-card"><span className="quick-icon green"><Icon name="wallet" /></span><div><p>{en ? "Accounts" : "Tài khoản"}</p><strong>{data.accounts.filter((a) => !a.isHidden).length}</strong></div><Icon name="arrow" className="arrow" /></Link>
-      <Link href="/debts" className="quick-card"><span className="quick-icon purple"><Icon name="debt" /></span><div><p>{en ? "Net debt" : "Công nợ ròng"}</p><strong>{formatMoney(debtReceivable - debtPayable)}</strong></div><Icon name="arrow" className="arrow" /></Link>
-    </section>
-
-    <section className="content-section">
-      <div className="section-title"><div><span className="kicker">{en ? "Activity" : "Hoạt động"}</span><h2>{en ? "Recent" : "Gần đây"}</h2></div><Link href="/transactions">{en ? "All" : "Tất cả"}</Link></div>
-      {data.transactions.length === 0 ? <EmptyState title="Chưa có giao dịch">Nhấn nút + để ghi khoản thu, chi hoặc chuyển tiền đầu tiên.</EmptyState> :
-        <div className="transaction-list">{data.transactions.slice(0, 5).map((item) => {
-          const category = item.categoryId ? categoryMap.get(item.categoryId) : undefined;
-          const account = data.accounts.find((a) => a.id === item.accountId);
-          return <div className="transaction-row" key={item.id}>
-            <span className="category-icon" style={{ background: `${category?.color ?? "#66717d"}20` }}>{item.type === "transfer" ? "⇄" : category?.icon ?? "•"}</span>
-            <div className="transaction-main"><strong>{item.type === "transfer" ? "Chuyển tiền" : category?.name ?? "Không phân loại"} {item.status === "pending" && <em className="pending-badge">Chờ</em>}</strong><span>{account?.name}{item.note ? ` · ${item.note}` : ""}</span></div>
-            <strong className={item.status === "pending" ? "pending-money" : item.type === "income" ? "income-text" : item.type === "expense" ? "expense-text" : ""}>{item.type === "income" ? "+" : item.type === "expense" ? "−" : ""}{formatMoney(item.amount)}</strong>
-          </div>;
-        })}</div>}
-    </section>
+  const money = [
+    { href: "/accounts", icon: "wallet" as IconName, en: "Accounts", vi: "Tài khoản", detail: data?.accounts ?? 0, tone: "green" },
+    { href: "/debts", icon: "debt" as IconName, en: "Debts", vi: "Công nợ", detail: data?.debts ?? 0, tone: "purple" },
+    { href: "/recurring", icon: "refresh" as IconName, en: "Recurring payments", vi: "Chi cố định", detail: data?.recurring ?? 0, tone: "blue" },
+  ];
+  const plans = [
+    { href: "/goals", icon: "target" as IconName, en: "Goals", vi: "Mục tiêu", detail: data?.goals ?? 0, tone: "green" },
+    { href: "/assets", icon: "box" as IconName, en: "Owned items", vi: "Tài sản đang có", detail: data?.items ?? 0, tone: "purple" },
+    { href: "/settings", icon: "settings" as IconName, en: "Settings & backup", vi: "Cài đặt và sao lưu", detail: null, tone: "neutral" },
+  ];
+  return <div className="page-stack manage-page"><PageHeader eyebrow={en ? "Personal Finance" : "Quản lý tài chính"} title={en ? "Manage" : "Quản lý"} />
+    <IosGroup title={en ? "Money" : "Dòng tiền"} items={money} en={en} />
+    <IosGroup title={en ? "Plans & app" : "Kế hoạch và ứng dụng"} items={plans} en={en} />
   </div>;
 }
 
-function DashboardSkeleton() {
-  return <div className="page-stack"><div className="balance-hero skeleton-block"/><div className="quick-grid"><div className="quick-card skeleton-block"/><div className="quick-card skeleton-block"/></div></div>;
+function IosGroup({ title, items, en }: { title: string; items: Array<{ href: string; icon: IconName; en: string; vi: string; detail: number | null; tone: string }>; en: boolean }) {
+  return <section className="ios-group"><h2>{title}</h2><div>{items.map((item) => <Link href={item.href} className="ios-list-row" key={item.href}><span className={`ios-list-icon ${item.tone}`}><Icon name={item.icon} /></span><strong>{en ? item.en : item.vi}</strong>{item.detail !== null && <small>{item.detail}</small>}<b>›</b></Link>)}</div></section>;
 }

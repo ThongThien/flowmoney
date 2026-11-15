@@ -37,6 +37,7 @@ export async function replaceDatabaseFromBackup(backup: FlowMoneyBackup): Promis
       if (backup.databaseVersion < 3 && table.name === "transactions") rows = rows.map((row) => ({ ...(row as object), status: "posted" }));
       if (backup.databaseVersion < 3 && table.name === "goals") rows = rows.map((row) => ({ ...(row as object), kind: "savings" }));
       if (backup.databaseVersion < 4 && table.name === "goals") rows = rows.map((row) => ({ ...(row as object), isArchived: 0 }));
+      if (backup.databaseVersion < 5 && table.name === "recurringRules") rows = rows.map((row) => ({ ...(row as object), startsAt: (row as { createdAt?: string }).createdAt ?? backup.exportedAt }));
       if (rows.length) await (table as Table<unknown>).bulkAdd(rows);
     }
   });

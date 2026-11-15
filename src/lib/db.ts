@@ -30,7 +30,7 @@ export interface GoalRecord {
 export interface GoalContributionRecord { id: string; goalId: string; accountId?: string; transactionId?: string; amount: number; contributedAt: string; note: string }
 export interface RecurringRuleRecord {
   id: string; name: string; amount: number; accountId: string; categoryId: string;
-  dayOfMonth: number; note: string; isActive: 0 | 1; createdAt: string; updatedAt: string;
+  dayOfMonth: number; note: string; isActive: 0 | 1; startsAt: string; createdAt: string; updatedAt: string;
 }
 export interface PossessionRecord {
   id: string; name: string; price: number; purchasedAt?: string; note: string;
@@ -89,6 +89,20 @@ class FlowMoneyDatabase extends Dexie {
       possessions: "&id, isArchived, purchasedAt, createdAt",
     }).upgrade(async (transaction) => {
       await transaction.table("goals").toCollection().modify({ isArchived: 0 });
+    });
+    this.version(5).stores({
+      appMeta: "&key",
+      accounts: "&id, type, isHidden, createdAt",
+      categories: "&id, type, name",
+      transactions: "&id, type, status, accountId, toAccountId, categoryId, recurringRuleId, occurredAt, createdAt",
+      debts: "&id, direction, accountId, dueDate, createdAt",
+      debtPayments: "&id, debtId, accountId, paidAt",
+      goals: "&id, kind, isArchived, deadline, createdAt",
+      goalContributions: "&id, goalId, accountId, contributedAt",
+      recurringRules: "&id, isActive, accountId, categoryId, dayOfMonth, createdAt",
+      possessions: "&id, isArchived, purchasedAt, createdAt",
+    }).upgrade(async (transaction) => {
+      await transaction.table("recurringRules").toCollection().modify((rule) => { rule.startsAt = rule.createdAt; });
     });
   }
 }

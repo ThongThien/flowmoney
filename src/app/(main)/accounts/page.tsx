@@ -18,6 +18,7 @@ const colors = ["#25d8a3", "#46a6ff", "#b58cff", "#ff9d66", "#ff6f91"];
 export default function AccountsPage() {
   const data = useLiveQuery(async () => ({ accounts: await db.accounts.toArray(), transactions: await db.transactions.toArray() }));
   const [editing, setEditing] = useState<AccountRecord | null>(null);
+  const [addingBalance, setAddingBalance] = useState<AccountRecord | null>(null);
   const [showForm, setShowForm] = useState(false);
   const en = useAppStore((state) => state.locale) === "en";
   if (!data) return null;
@@ -30,6 +31,7 @@ export default function AccountsPage() {
     <section className="summary-strip"><div><span>{en ? "Total balance" : "Tổng số dư"}</span><strong>{formatMoney(total)}</strong></div><button className="round-add" aria-label="Add account" onClick={() => { setEditing(null); setShowForm(true); }}>+</button></section>
 
     {(showForm || editing) && <Modal title="Account" onClose={() => { setShowForm(false); setEditing(null); }}><AccountForm account={editing} onClose={() => { setShowForm(false); setEditing(null); }} en={en} /></Modal>}
+    {addingBalance && <Modal title="Add balance" onClose={() => setAddingBalance(null)}><DirectBalanceForm account={addingBalance} currentBalance={calculateAccountBalance(addingBalance, data.transactions)} onClose={() => setAddingBalance(null)} en={en} /></Modal>}
 
     <section className="content-section">
       <div className="section-title"><h2>{en ? "Available" : "Đang sử dụng"}</h2><span>{active.length}</span></div>
@@ -38,7 +40,7 @@ export default function AccountsPage() {
         { label: "Ẩn tài khoản", icon: "◌", tone: "danger", onClick: () => { void db.accounts.update(account.id, { isHidden: 1, updatedAt: new Date().toISOString() }); } },
       ]}><article className="account-card" style={{ "--account-color": account.color } as React.CSSProperties}>
         <span className="account-wordmark">{accountBrand(account.name, account.type)}</span><div className="account-card-top"><span className="account-symbol"><Icon name="wallet" /></span><span className="account-type">{typeLabel(account.type, en)}</span></div>
-        <div><h3>{account.name}</h3><strong>{formatMoney(calculateAccountBalance(account, data.transactions))}</strong></div>
+        <div><h3>{account.name}</h3><strong>{formatMoney(calculateAccountBalance(account, data.transactions))}</strong></div><button className="account-quick-add" aria-label={en ? `Add balance to ${account.name}` : `Cộng số dư vào ${account.name}`} onClick={() => setAddingBalance(account)}>+</button>
       </article></SwipeActions>)}</div>
     </section>
 
@@ -46,6 +48,12 @@ export default function AccountsPage() {
 
     {hidden.length > 0 && <section className="content-section muted-section"><div className="section-title"><h2>Đã ẩn</h2></div>{hidden.map((account) => <div className="simple-row" key={account.id}><span>{account.name}</span><button onClick={() => db.accounts.update(account.id, { isHidden: 0, updatedAt: new Date().toISOString() })}>Hiện lại</button></div>)}</section>}
   </div>;
+}
+
+function DirectBalanceForm({ account, currentBalance, onClose, en }: { account: AccountRecord; currentBalance: number; onClose: () => void; en: boolean }) {
+  const [amount, setAmount] = useState(0);
+  async function submit(event: FormEvent) { event.preventDefault(); if (amount <= 0) return; await db.accounts.update(account.id, { openingBalance: account.openingBalance + amount, updatedAt: new Date().toISOString() }); onClose(); }
+  return <form className="modal-form" onSubmit={submit}><span className="kicker">{en ? "Direct adjustment" : "Điều chỉnh trực tiếp"}</span><h2>{account.name}</h2><label>{en ? "Amount to add" : "Số tiền cộng thêm"}<MoneyInput value={amount} onChange={setAmount} /></label><div className="balance-preview"><span>{en ? "Current" : "Hiện tại"}<b>{formatMoney(currentBalance)}</b></span><i>→</i><span>{en ? "After" : "Sau khi cộng"}<b>{formatMoney(currentBalance + amount)}</b></span></div><p className="form-note">{en ? "This changes the account balance directly and creates no activity record." : "Thao tác này đổi số dư trực tiếp và không tạo giao dịch."}</p><button className="primary-button" disabled={!amount}>{en ? "Add balance" : "Cộng số dư"}</button></form>;
 }
 
 function AccountForm({ account, onClose, en }: { account: AccountRecord | null; onClose: () => void; en: boolean }) {
